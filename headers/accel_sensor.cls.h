@@ -20,98 +20,89 @@
 
 using namespace std;
 
-//From Table 19. of the ADXL345 Data sheet ( http://www.analog.com/media/en/technical-documentation/data-sheets/ADXL345.pdf )
-#define DEVID           0x00   //Device ID                                                   - Read Only.
-#define THRESH_TAP      0x1D   //Tap Threshold                                               - Read/Write Available.
-#define OFSX            0x1E   //X-axis Offset                                               - Read/Write Available.
-#define OFSY            0x1F   //Y-axis Offset                                               - Read/Write Available.
-#define OFSZ            0x20   //Z-axis Offset                                               - Read/Write Available.
-#define DUR             0x21   //Tap duration                                                - Read/Write Available.
-#define LATENT          0x22   //Tap latency                                                 - Read/Write Available.
-#define WINDOW          0x23   //Tap window                                                  - Read/Write Available.
-#define THRESH_ACT      0x24   //Activity threshold                                          - Read/Write Available.
-#define THRESH_INACT    0x25   //Threshold inactivity                                        - Read/Write Available.
-#define TIME_INACT      0x26   //Inactivity time                                             - Read/Write Available.
-#define ACT_INACT_CTL   0x27   //Axis enable control for activity and inactivity detection   - Read/Write Available.
-#define THRESH_FF       0x28   //Free-fall threshold                                         - Read/Write Available.
-#define TIME_FF         0x29   //Free-fall time                                              - Read/Write Available.
-#define TAP_AXES        0x2A   //Axis control for single tap/double tap                      - Read/Write Available.
-#define ACT_TAP_STATUS  0x2B   //Source of single tap/double tap                             - Read Only.
-#define BW_RATE         0x2C   //Data rate and power mode control                            - Read/Write Available.
-#define POWER_CTL       0x2D   //Power-saving features control                               - Read/Write Available.
-#define INT_ENABLE      0x2E   //Interrupt enable control                                    - Read/Write Available.
-#define INT_MAP         0x2F   //Interrupt mapping control                                   - Read/Write Available.
-#define INT_SOURCE      0x30   //Source of interrupts                                        - Read Only.
-#define DATA_FORMAT     0x31   //Data format control                                         - Read/Write Available.
-#define DATAX0          0x32   //X-axis Data 0                                               - Read Only.
-#define DATAX1          0x33   //X-axis Data 1                                               - Read Only.
-#define DATAY0          0x34   //Y-axis Data 0                                               - Read Only.
-#define DATAY1          0x35   //Y-axis Data 1                                               - Read Only.
-#define DATAZ0          0x36   //Z-axis Data 0                                               - Read Only.
-#define DATAZ1          0x37   //Z-axis Data 1                                               - Read Only.
-#define FIFO_CTL        0x38   //FIFO control                                                - Read/Write Available.
-#define FIFO_STATUS     0x39   //FIFO status                                                 - Read Only
-#define TOTAL_REGISTERS 0x40
+//From Table 17. of the LSM303 Data sheet ( https://www.adafruit.com/datasheets/LSM303DLHC.PDF )
+//Accelerometer
+#define CTRL_REG1_A         0x20    //Read/Write (power control)
+#define CTRL_REG2_A         0x21    //Read/Write
+#define CTRL_REG3_A         0x22    //Read/Write
+#define CTRL_REG4_A         0x23    //Read/Write
+#define CTRL_REG5_A         0x24    //Read/Write
+#define CTRL_REG6_A         0x25    //Read/Write
+#define REFERENCE_A         0x26    //Read/Write
+#define STATUS_REG_A        0x27    //Read
+#define OUT_X_L_A           0x28    //Read
+#define OUT_X_H_A           0x29    //Read
+#define OUT_Y_L_A           0x2A    //Read
+#define OUT_Y_H_A           0x2B    //Read
+#define OUT_Z_L_A           0x2C    //Read
+#define OUT_Z_H_A           0x2D    //Read
+#define FIFO_CTRL_REG_A     0x2E    //Read/Write
+#define FIFO_SRC_REG_A      0x2F    //Read
+#define INT1_CFG_A          0x30    //Read/Write
+#define INT1_SOURCE_A       0x31    //Read
+#define INT1_THS_A          0x32    //Read/Write
+#define INT1_DURATION_A     0x33    //Read/Write
+#define INT2_CFG_A          0x34    //Read/Write
+#define INT2_SOURCE_A       0x35    //Read
+#define INT2_THS_A          0x36    //Read/Write
+#define INT2_DURATION_A     0x37    //Read/Write
+#define CLICK_CFG_A         0x38    //Read/Write
+#define CLICK_SRC_A         0x39    //Read/Write
+#define CLICK_THS_A         0x3A    //Read/Write
+#define TIME_LIMIT_A        0x3B    //Read/Write
+#define TIME_LATENCY_A      0x3C    //Read/Write
+#define TIME_WINDOW_A       0x3D    //Read/Write
+
+#define OFFSET_X            25.5     //average of 2000 iterations on a flat floor not moving.
+#define OFFSET_Y            13    // as above
 
 class ACCEL_SENSOR {
 
 private:
     
     enum accel_switch {
-        ON = 0x08,
+        ON = 0x77,
         OFF = 0x00
     };
     
     enum accel_range {
-        R2_G = 0,
-        R4_G = 1,
-        R8_G = 2,
-        R16_G = 3
+        HIGHRES_16G = 0x38,
+        LOWRES_2G   = 0x00
     };
     
-    enum accel_res {
-        STANDARD = 0,
-        HIGH = 1
-    };
-    
-    unsigned char* rxBuffer;
     char txBuffer[2];
     
     int ACCEL_ADDRESS;
     int openi2cStatus;
     int i2cHandle;
     
-    void get_xy_angles( void );
+    short get_value(unsigned int address);
     
-    accel_range get_range( void );
-    accel_res get_res( void );
+    void get_current_xy_angle( void );
+    void get_values( void );
     
-    void save_values( void );
+    int writeReg(unsigned char value);
+
     void set_power( accel_switch _SWITCH );
-    void set_range( accel_range range );
-    void set_res( accel_res res );
-    void set_offset( unsigned char offset_type, int8_t offset );
+    void set_res_range( accel_range _RANGE );
     
 public:
     
     short _X;
     short _Y;
     short _Z;
-    short x_angle;
-    short y_angle;
-    
-    accel_range range;
-    accel_res res;
+    double roll;
+    double pitch;
     
     ACCEL_SENSOR();
     
-    void get_values( void );
-    
+    void get_xy_angle( void );
     short get_X( void );
     short get_Y( void );
     short get_Z( void );
-    short get_angle_x( void );
-    short get_angle_y( void );
+    double get_roll( void );
+    double get_pitch( void );
+    
 };
 
 #endif

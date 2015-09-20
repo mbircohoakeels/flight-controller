@@ -7,7 +7,7 @@
 #define DB_CLS_H_
 
 #define _LOGS_db_username "_LOG_Viewer"
-#define _LOGS_db_password "xxxxxxxxxxxxxxxxxx"
+#define _LOGS_db_password "Jt7BcXSbqEVMUuPmzcLrzQ9rKux"
 #define _LOGS_db "_LOGS"
 #define _LOGS_db_server "127.0.0.1"
 
